@@ -6,12 +6,18 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: "/",
+      path: '/',
+      redirect: to => {
+        return { path: '/SplitPay/' }
+      },
+    },
+    {
+      path: "/SplitPay/",
       name: "home",
       component: HomeView,
     },
     {
-      path: "/payMe/:data/:index?",
+      path: "/SplitPay/payMe/:data/:index?",
       name: "payMe",
       component: PayView,
     },
