@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
+import { onMounted } from "vue";
 import cNames from "./countryNames.json";
 import cCurrency from "./countryCurrency.json";
 import currencyPricesJSON from "./currencyPrices.json";
@@ -15,9 +16,23 @@ const router = useRouter()
 const countryNames = cNames;
 const countryCurrency = cCurrency;
 const currencyPrices = currencyPricesJSON;
+
+onMounted(() => {
+  const localData = localStorage.getItem("accounts");
+  if (localData) {
+    formData.value = {
+      ...formData.value,
+      ...JSON.parse(localData),
+    };
+  }
+})
+
 const submitHandler = async () => {
+  const { email, country, currency, bankCode, mainNumber, prefix } = formData.value;
   const stringifiedData = JSON.stringify(formData.value);
   const URIencodedData = encode(stringifiedData);
+  const localStorageData = { email, country, currency, bankCode, mainNumber, prefix };
+  localStorage.setItem("accounts", JSON.stringify(localStorageData));
   window.location.replace(`/payMe/${URIencodedData}`);
 }
 const currencyChange = async () => {
