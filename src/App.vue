@@ -22,6 +22,12 @@ import { RouterLink, RouterView } from "vue-router";
 </template>
 
 <style>
+html {
+  background: rgb(0,255,81);
+  background: linear-gradient(0deg, #00ff51 0%, #01e3aa 100%);
+  min-height: -webkit-fill-available;
+  height: auto;
+}
 #app {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   max-width: 1280px;

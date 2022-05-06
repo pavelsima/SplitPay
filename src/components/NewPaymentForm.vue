@@ -1,6 +1,8 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
+import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { onMounted } from "vue";
+import { db } from "../firebase";
 import cNames from "./countryNames.json";
 import cCurrency from "./countryCurrency.json";
 import currencyPricesJSON from "./currencyPrices.json";
@@ -12,6 +14,7 @@ const formData = ref({
   country: "CZ",
   payers: [],
 })
+const isSaving = ref(false);
 const router = useRouter()
 const countryNames = cNames;
 const countryCurrency = cCurrency;
@@ -27,13 +30,38 @@ onMounted(() => {
   }
 })
 
+const saveAndEncodeShortData = async (formData) => {
+  try {
+    const docRef = await addDoc(collection(db, "short"), {
+      data: "",
+    });
+    const allFormData = {
+      ...formData,
+      shortId: docRef.id,
+    };
+    const stringifiedData = JSON.stringify(allFormData);
+    const URIencodedData = encode(stringifiedData);
+    await setDoc(doc(db, "short", docRef.id), {
+      data: URIencodedData,
+    });
+
+    return encode(stringifiedData);
+  }
+  catch (e) {
+    console.error(e);
+    const stringifiedData = JSON.stringify(formData);
+    return encode(stringifiedData);
+  }
+}
+
 const submitHandler = async () => {
+  isSaving.value = true;
   const { email, country, currency, bankCode, mainNumber, prefix } = formData.value;
-  const stringifiedData = JSON.stringify(formData.value);
-  const URIencodedData = encode(stringifiedData);
+  const URIencodedData = await saveAndEncodeShortData(formData.value);
   const localStorageData = { email, country, currency, bankCode, mainNumber, prefix };
   localStorage.setItem("accounts", JSON.stringify(localStorageData));
   window.location.replace(`/payMe/${URIencodedData}`);
+  isSaving.value = false;
 }
 const currencyChange = async () => {
   setTimeout(() => formData.value.currency = formData.value.country, 100);
@@ -56,6 +84,7 @@ const addPayer = () => {
 
 <template>
   <FormKit
+    v-if="!isSaving"
     type="form"
     v-model="formData"
     submit-label="Make payment link"
@@ -173,9 +202,15 @@ const addPayer = () => {
     <p style="color: #bbbbbb;font-size: 13px;">No data are saved in any database.</p>
 
   </FormKit>
+  <h3 v-else id="savingHeader">Saving data...</h3>
 </template>
 
 <style>
+#savingHeader {
+  text-align: center;
+  color: #ffffff;
+  padding: 50px 0;
+}
 .priceBlock {
   display: flex;
   justify-content: space-between;

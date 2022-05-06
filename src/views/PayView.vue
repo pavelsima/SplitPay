@@ -30,7 +30,7 @@ const doCopy = (shareUrl) => {
   })
 }
 
-const selectPayer = async (payer, i) => {
+const selectPayer = (payer, i) => {
   const remainingPrefixSize = 6 - (formData.value.prefix?.length || 0);
   let prefix = [...Array(remainingPrefixSize)].reduce((total, n) => {
     return `${total}0`
@@ -68,10 +68,7 @@ const selectPayer = async (payer, i) => {
       spaydQrCodeEl.setAttribute('src', url);
     })
     .catch(console.error);
-  const shareFullUrl = `${window.location.origin}/payMe/${route.params.data}/${i}`
-  const response = await fetch(`https://api.shrtco.de/v2/shorten?url=${encodeURI(shareFullUrl)}`)
-  const json = await response.json();
-  const shareUrl = json?.result?.full_short_link3;
+  const shareUrl = `${window.location.origin}/short/${formData.value.shortId}/${i}`
 
   selectedData.value = {
     ...payer,
@@ -315,14 +312,5 @@ onMounted(() => {
 .share-btn > a:hover {
   cursor: pointer;
   background: #00f869;
-}
-</style>
-
-<style>
-html {
-  background: rgb(0,255,81);
-  background: linear-gradient(0deg, #00ff51 0%, #01e3aa 100%);
-  min-height: -webkit-fill-available;
-  height: auto;
 }
 </style>
