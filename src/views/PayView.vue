@@ -20,10 +20,9 @@ const formData = ref({});
 const selectedData = ref(null);
 const copyLabel = ref("Copy to clipboard");
 const paymentType = ref("spayd");
-const url = window.location.href;
 
-const doCopy = (index) => {
-  copyText(`${url}/${index}`, undefined, (error) => {
+const doCopy = (shareUrl) => {
+  copyText(shareUrl, undefined, (error) => {
     if (!error) {
       copyLabel.value = "Copied!";
       setTimeout(() => copyLabel.value = "Copy to clipboard", 3000);
@@ -31,7 +30,7 @@ const doCopy = (index) => {
   })
 }
 
-const selectPayer = (payer, i) => {
+const selectPayer = async (payer, i) => {
   const remainingPrefixSize = 6 - (formData.value.prefix?.length || 0);
   let prefix = [...Array(remainingPrefixSize)].reduce((total, n) => {
     return `${total}0`
@@ -69,11 +68,16 @@ const selectPayer = (payer, i) => {
       spaydQrCodeEl.setAttribute('src', url);
     })
     .catch(console.error);
+  const shareFullUrl = `${window.location.origin}/payMe/${route.params.data}/${i}`
+  const response = await fetch(`https://api.shrtco.de/v2/shorten?url=${encodeURI(shareFullUrl)}`)
+  const json = await response.json();
+  const shareUrl = json?.result?.full_short_link3;
 
   selectedData.value = {
     ...payer,
     iban,
     index: +i,
+    shareUrl,
   };
 }
 
@@ -165,7 +169,7 @@ onMounted(() => {
         <div class="share-btn">
           <ShareNetwork
             network="messenger"
-            :url="`${url}/${selectedData.index}`"
+            :url="selectedData.shareUrl"
             :title="`Lets split this bill: ${formData.paymentName}`"
             :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
           >
@@ -173,7 +177,7 @@ onMounted(() => {
           </ShareNetwork>
           <ShareNetwork
             network="telegram"
-            :url="`${url}/${selectedData.index}`"
+            :url="selectedData.shareUrl"
             :title="`Lets split this bill: ${formData.paymentName}`"
             :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
           >
@@ -181,7 +185,7 @@ onMounted(() => {
           </ShareNetwork>
           <ShareNetwork
             network="whatsapp"
-            :url="`${url}/${selectedData.index}`"
+            :url="selectedData.shareUrl"
             :title="`Lets split this bill: ${formData.paymentName}`"
             :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
           >
@@ -189,14 +193,14 @@ onMounted(() => {
           </ShareNetwork>
           <ShareNetwork
             network="email"
-            :url="`${url}/${selectedData.index}`"
+            :url="selectedData.shareUrl"
             :title="`Lets split this bill: ${formData.paymentName}`"
             :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
           >
             Email
           </ShareNetwork>
           <br />
-          <a @click="doCopy(selectedData.index)">
+          <a @click="doCopy(selectedData.shareUrl)">
             {{copyLabel}}
           </a>
         </div>
