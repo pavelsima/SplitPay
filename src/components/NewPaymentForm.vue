@@ -74,8 +74,14 @@ const saveAndEncodeShortData = async (formData) => {
 const submitHandler = async () => {
   if (!reCaptcha.value) return;
   isSaving.value = true;
-  const { email, country, currency, bankCode, mainNumber, prefix } = formData.value;
-  const URIencodedData = await saveAndEncodeShortData(formData.value);
+  const { email, country, currency, bankCode, mainNumber, prefix, doNotShortenUrl } = formData.value;
+  let URIencodedData = "";
+  if (doNotShortenUrl) {
+    const stringifiedData = JSON.stringify(formData.value);
+    URIencodedData = encode(stringifiedData);
+  } else {
+    URIencodedData = await saveAndEncodeShortData(formData.value);
+  }
   const localStorageData = { email, country, currency, bankCode, mainNumber, prefix };
   localStorage.setItem("accounts", JSON.stringify(localStorageData));
   window.location.replace(`/payMe/${URIencodedData}`);
@@ -230,7 +236,14 @@ const addPayer = () => {
 
     <p v-if="isReCaptchaFailed" style="color: red;">reCaptcha failed, please try again.</p>
 
-    <p style="color: #bbbbbb;font-size: 13px;">No data are saved in any database.</p>
+    <p style="color: #bbbbbb;font-size: 13px;">Encrypted data are stored in the database for purpose of URL shortening.</p>
+
+    <FormKit
+      type="checkbox"
+      label="Do not shorten the URL"
+      help="(do not save any data)"
+      name="doNotShortenUrl"
+    />
 
   </FormKit>
   <h3 v-else id="savingHeader">Saving data...</h3>

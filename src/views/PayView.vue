@@ -68,7 +68,9 @@ const selectPayer = (payer, i) => {
       spaydQrCodeEl.setAttribute('src', url);
     })
     .catch(console.error);
-  const shareUrl = `${window.location.origin}/short/${formData.value.shortId}/${i}`
+  const shareUrl = formData.value?.shortId
+    ? `${window.location.origin}/short/${formData.value.shortId}/${i}`
+    : `${window.location.origin}/payMe/${route.params.data}/${i}`;
 
   selectedData.value = {
     ...payer,
