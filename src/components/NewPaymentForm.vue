@@ -72,10 +72,7 @@ const saveAndEncodeShortData = async (formData) => {
 }
 
 const submitHandler = async () => {
-  if (!reCaptcha.value) {
-    vueRecaptchaRef.value.execute();
-    return;
-  }
+  if (!reCaptcha.value) return;
   isSaving.value = true;
   const { email, country, currency, bankCode, mainNumber, prefix } = formData.value;
   const URIencodedData = await saveAndEncodeShortData(formData.value);
@@ -220,10 +217,9 @@ const addPayer = () => {
       />
     </div>
 
-    <p style="color: #bbbbbb;font-size: 13px;">No data are saved in any database.</p>
-
     <vue-recaptcha
       sitekey="6LeqCswfAAAAAMVE7pZ8xan6csuBCLt_N9gyv5_w"
+      class="reCaptcha"
       size="normal"
       theme="light"
       @verify="recaptchaVerified"
@@ -233,6 +229,8 @@ const addPayer = () => {
     </vue-recaptcha>
 
     <p v-if="isReCaptchaFailed" style="color: red;">reCaptcha failed, please try again.</p>
+
+    <p style="color: #bbbbbb;font-size: 13px;">No data are saved in any database.</p>
 
   </FormKit>
   <h3 v-else id="savingHeader">Saving data...</h3>
@@ -308,5 +306,8 @@ const addPayer = () => {
 }
 .content form .add-payer-button .formkit-wrapper button:hover {
   background: #eeeeee;
+}
+.reCaptcha {
+  padding: 10px 0;
 }
 </style>
