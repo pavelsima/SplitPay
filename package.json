@@ -27,7 +27,8 @@
     "vue-router": "^4.0.14",
     "vue-share-buttons": "^1.1.1",
     "vue-social-sharing": "^4.0.0-alpha4",
-    "vue3-clipboard": "^1.0.0"
+    "vue3-clipboard": "^1.0.0",
+    "vue3-recaptcha2": "^1.6.0"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.0",

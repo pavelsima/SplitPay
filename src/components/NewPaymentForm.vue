@@ -7,6 +7,7 @@ import cNames from "./countryNames.json";
 import cCurrency from "./countryCurrency.json";
 import currencyPricesJSON from "./currencyPrices.json";
 import { encode } from 'js-base64';
+import vueRecaptcha from 'vue3-recaptcha2'
 
 import { ref, nextTick } from 'vue'
 const formData = ref({
@@ -15,7 +16,10 @@ const formData = ref({
   payers: [],
 })
 const isSaving = ref(false);
-const router = useRouter()
+const reCaptcha = ref(false);
+const isReCaptchaFailed = ref(false);
+const router = useRouter();
+const vueRecaptchaRef = ref(null)
 const countryNames = cNames;
 const countryCurrency = cCurrency;
 const currencyPrices = currencyPricesJSON;
@@ -29,6 +33,19 @@ onMounted(() => {
     };
   }
 })
+
+const recaptchaVerified = (response) => {
+  isReCaptchaFailed.value = true;
+  reCaptcha.value = true;
+};
+const recaptchaExpired = () => {
+  reCaptcha.value = false;
+  vueRecaptchaRef.value.reset();
+};
+const recaptchaFailed = () => {
+  isReCaptchaFailed.value = true;
+  reCaptcha.value = false;
+}
 
 const saveAndEncodeShortData = async (formData) => {
   try {
@@ -55,6 +72,10 @@ const saveAndEncodeShortData = async (formData) => {
 }
 
 const submitHandler = async () => {
+  if (!reCaptcha.value) {
+    vueRecaptchaRef.value.execute();
+    return;
+  }
   isSaving.value = true;
   const { email, country, currency, bankCode, mainNumber, prefix } = formData.value;
   const URIencodedData = await saveAndEncodeShortData(formData.value);
@@ -200,6 +221,18 @@ const addPayer = () => {
     </div>
 
     <p style="color: #bbbbbb;font-size: 13px;">No data are saved in any database.</p>
+
+    <vue-recaptcha
+      sitekey="6LeqCswfAAAAAMVE7pZ8xan6csuBCLt_N9gyv5_w"
+      size="normal"
+      theme="light"
+      @verify="recaptchaVerified"
+      @expire="recaptchaExpired"
+      @fail="recaptchaFailed"
+      ref="vueRecaptchaRef">
+    </vue-recaptcha>
+
+    <p v-if="isReCaptchaFailed" style="color: red;">reCaptcha failed, please try again.</p>
 
   </FormKit>
   <h3 v-else id="savingHeader">Saving data...</h3>
