@@ -35,7 +35,7 @@ onMounted(() => {
 })
 
 const recaptchaVerified = (response) => {
-  isReCaptchaFailed.value = true;
+  isReCaptchaFailed.value = false;
   reCaptcha.value = true;
 };
 const recaptchaExpired = () => {
