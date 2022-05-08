@@ -21,6 +21,6 @@ export const validateBBAN = (accNumberPrefix, accMainNumber, bankCode, country) 
   return IBAN.validateBBAN(accountNumber, country);
 }
 
-export const validateIBAN = (IBAN) => {
-  return IBAN.validateIBAN(IBAN, true);
+export const validateIBAN = (IBANToValidate) => {
+  return IBAN.validateIBAN(IBANToValidate, true);
 }
