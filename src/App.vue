@@ -28,12 +28,15 @@ html {
   min-height: -webkit-fill-available;
   height: auto;
 }
+body {
+  width: 100%;
+}
 #app {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
-
+  width: 100%;
   font-weight: normal;
 }
 header {

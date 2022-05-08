@@ -7,6 +7,7 @@ import cNames from "./countryNames.json";
 import cCurrency from "./countryCurrency.json";
 import currencyPricesJSON from "./currencyPrices.json";
 import { encode } from 'js-base64';
+import { generateIBAN, validateBBAN, validateIBAN } from "../methods/iban";
 import vueRecaptcha from 'vue3-recaptcha2'
 
 import { ref, nextTick } from 'vue'
@@ -14,6 +15,9 @@ const formData = ref({
   currency: "CZ",
   country: "CZ",
   payers: [],
+  isSPAYD: true,
+  isSEPA: false,
+  isPayPal: false,
 })
 const isSaving = ref(false);
 const reCaptcha = ref(false);
@@ -23,6 +27,7 @@ const vueRecaptchaRef = ref(null)
 const countryNames = cNames;
 const countryCurrency = cCurrency;
 const currencyPrices = currencyPricesJSON;
+const errorMsg = ref("");
 
 onMounted(() => {
   const localData = localStorage.getItem("accounts");
@@ -73,7 +78,30 @@ const saveAndEncodeShortData = async (formData) => {
 
 const submitHandler = async () => {
   if (!reCaptcha.value) return;
-  isSaving.value = true;
+
+  if (formData.value.isSPAYD && !validateBBAN(
+    formData.value?.prefix || "",
+    formData.value.mainNumber,
+    formData.value.bankCode,
+    formData.value.country)) {
+      errorMsg.value = "Account number is not valid.";
+      isSaving.value = false;
+      return;
+    }
+
+  if (formData.value.isSEPA && !validateIBAN(
+    formData.value.IBAN || "")) {
+      errorMsg.value = "IBAN is not valid.";
+      isSaving.value = false;
+      return;
+    }
+
+  if (formData.value.payers.length === 0) {
+      errorMsg.value = "You need to add at least one payer.";
+      isSaving.value = false;
+      return;
+    }
+
   const { email, country, currency, bankCode, mainNumber, prefix, doNotShortenUrl } = formData.value;
   let URIencodedData = "";
   if (doNotShortenUrl) {
@@ -82,13 +110,26 @@ const submitHandler = async () => {
   } else {
     URIencodedData = await saveAndEncodeShortData(formData.value);
   }
+
+  isSaving.value = true;
   const localStorageData = { email, country, currency, bankCode, mainNumber, prefix };
   localStorage.setItem("accounts", JSON.stringify(localStorageData));
   window.location.replace(`/payMe/${URIencodedData}`);
   isSaving.value = false;
 }
+const updateIBAN = (update, name) => {
+  const prefix = name === "prefix" ? update : formData.value?.prefix || "";
+  const mainNumber = name === "mainNumber" ? update : formData.value?.mainNumber || "";
+  const bankCode = name === "bankCode" ? update : formData.value?.bankCode || "";
+  const country = name === "country" ? update : formData.value.country;
+  if (!validateBBAN(prefix, mainNumber, bankCode, country)) return;
+  formData.value.IBAN = generateIBAN(prefix, mainNumber, bankCode, country);
+}
 const currencyChange = async () => {
-  setTimeout(() => formData.value.currency = formData.value.country, 100);
+  setTimeout(() => {
+    formData.value.currency = formData.value.country;
+    updateIBAN(formData.value.country, "country");
+  }, 100);
 }
 const totalBillChanged = async () => {
   setTimeout(() => {
@@ -98,11 +139,31 @@ const totalBillChanged = async () => {
     formData.value.totalBillEur = convertedPrice.toFixed(0);
   }, 100);
 }
+const paymentOptionAdded = (paymentOption) => {
+  const localData = localStorage.getItem("accounts");
+  const parsedLocalData = JSON.parse(localData)
+  const obj = {
+    isSPAYD: ["prefix", "mainNumber", "bankCode"],
+    isSEPA: ["receiver", "IBAN", "BIC"],
+    isPayPal: ["email"],
+  }
+
+  formData.value[paymentOption] = !formData.value[paymentOption];
+  obj[paymentOption].map((option) => {
+    if (option === "IBAN") {
+      return updateIBAN();
+    }
+    formData.value[option] = parsedLocalData[option];
+  })
+}
 const addPayer = () => {
   formData.value.payers.push({
     name: "",
     amount: 0,
   });
+}
+const removePayer = (index) => {
+  formData.value.payers.splice(index, 1);
 }
 </script>
 
@@ -131,36 +192,78 @@ const addPayer = () => {
       type="select"
       name="country"
       label="Country of your account"
-      help="Needed for generating IBAN"
       :options="countryNames"
       @change="currencyChange"
     />
-    <FormKit
-      type="text"
-      name="email"
-      label="PayPal email"
-      help="If you want to use paypal, please fill this in."
-    />
-    <div class="accountNumber">
+    <div>
+      <h3>Pyment methods</h3>
       <FormKit
-        type="number"
-        name="prefix"
-        label="Acc. prefix"
+        type="checkbox"
+        name="isSPAYD"
+        label="SPD (SPAYD) QR code"
+        help="Short Payment Descriptor"
+        @change="paymentOptionAdded('isSPAYD')"
       />
-      <div class="sign">-</div>
+      <div v-if="formData.isSPAYD" class="accountNumber">
+        <FormKit
+          type="number"
+          name="prefix"
+          label="Acc. prefix"
+          @input="(e) => updateIBAN(e, 'prefix')"
+        />
+        <div class="sign">-</div>
+        <FormKit
+          type="number"
+          name="mainNumber"
+          label="Acc. number"
+          @input="(e) => updateIBAN(e, 'mainNumber')"
+        />
+        <div class="sign">/</div>
+        <FormKit
+          type="number"
+          name="bankCode"
+          label="Bank code"
+          @input="(e) => updateIBAN(e, 'bankCode')"
+        />
+      </div>
+
       <FormKit
-        type="number"
-        name="mainNumber"
-        label="Main acc. number"
-        validation="required"
+        type="checkbox"
+        name="isSEPA"
+        label="SEPA QR code"
+        help="European Payments Council QR code"
+        @change="paymentOptionAdded('isSEPA')"
       />
-      <div class="sign">/</div>
+      <div v-if="formData.isSEPA">
+        <FormKit
+          type="text"
+          name="IBAN"
+          label="IBAN"
+          help="If SPD is active IBAN is automaticly generaded from acount number"
+        />
+        <FormKit
+          type="text"
+          name="BIC"
+          label="BIC/SWIFT"
+          help="You can find here: https://wise.com/cz/swift-codes/"
+        />
+      </div>
+
       <FormKit
-        type="number"
-        name="bankCode"
-        label="Bank code"
-        validation="required"
+        type="checkbox"
+        name="isPayPal"
+        label="Paypal"
+        help="Recive money over your PayPal account"
+        @change="paymentOptionAdded('isPayPal')"
       />
+      <FormKit
+        v-if="formData.isPayPal"
+        type="text"
+        name="email"
+        label="PayPal email"
+        help="If you want to use paypal, please fill this in."
+      />
+
     </div>
     <div class="priceBlock">
       <FormKit
@@ -174,14 +277,14 @@ const addPayer = () => {
       <FormKit
         type="select"
         name="currency"
-        label="Bill currency"
+        label="Currency"
         :options="countryCurrency"
         @change="totalBillChanged"
       />
       <FormKit
         type="number"
         name="totalBillEur"
-        label="Bill in EUR"
+        label="In EUR"
         help="Approximated"
         validation="required"
         style="max-width: 100px;"
@@ -209,10 +312,11 @@ const addPayer = () => {
             validation="required"
           />
           <span class="currency">
-            / {{countryCurrency[formData.currency]}}
+             {{countryCurrency[formData.currency]}}
           </span>
         </span>
       </label>
+      <a class="removePayer" @click="removePayer(i)">X</a>
     </div>
 
     <div class="add-payer-button">
@@ -236,14 +340,17 @@ const addPayer = () => {
 
     <p v-if="isReCaptchaFailed" style="color: red;">reCaptcha failed, please try again.</p>
 
-    <p style="color: #bbbbbb;font-size: 13px;">Encrypted data are stored in the database for purpose of URL shortening.</p>
+    <div class="grayText">
+      <p>Encrypted data are stored in the database for purpose of URL shortening.</p>
+      <FormKit
+        type="checkbox"
+        label="Do not shorten the URL"
+        help="(do not save any data)"
+        name="doNotShortenUrl"
+      />
+    </div>
 
-    <FormKit
-      type="checkbox"
-      label="Do not shorten the URL"
-      help="(do not save any data)"
-      name="doNotShortenUrl"
-    />
+    <p v-if="errorMsg" style="color: red;">{{errorMsg}}</p>
 
   </FormKit>
   <h3 v-else id="savingHeader">Saving data...</h3>
@@ -277,6 +384,13 @@ const addPayer = () => {
   border: 1px dashed gray;
   border-radius: 5px;
   margin: 15px 0;
+  position: relative;
+}
+.payerBlock .removePayer {
+  position: absolute;
+  right: 10px;
+  top: 5px;
+  cursor: pointer;
 }
 .payerBlock label {
   display: block;
@@ -322,5 +436,9 @@ const addPayer = () => {
 }
 .reCaptcha {
   padding: 10px 0;
+}
+.grayText, .grayText .formkit-help {
+  color: #bbbbbb;
+  font-size: 13px;
 }
 </style>

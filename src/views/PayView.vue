@@ -6,7 +6,7 @@ import PaypalButton from "../components/PaypalButton.vue";
 import { decode } from 'js-base64';
 import { copyText } from 'vue3-clipboard';
 
-import IBAN from "fast-iban";
+import { generateIBAN } from "../methods/iban";
 import generateQrCode from "sepa-payment-qr-code";
 import spayd from 'spayd';
 import qrcode from 'qrcode';
@@ -31,14 +31,7 @@ const doCopy = (shareUrl) => {
 }
 
 const selectPayer = (payer, i) => {
-  const remainingPrefixSize = 6 - (formData.value.prefix?.length || 0);
-  let prefix = [...Array(remainingPrefixSize)].reduce((total, n) => {
-    return `${total}0`
-  }, "");
-  prefix = `${prefix}${formData.value?.prefix || ""}`;
-  const numberWithPrefix = `${prefix}${formData.value.mainNumber}`;
-  const accountNumber = `${formData.value.bankCode}${numberWithPrefix}`;
-  const iban = IBAN.generateIBAN(accountNumber, formData.value.country, true, false);
+  const iban = generateIBAN(formData.value.prefix, formData.value.mainNumber, formData.value.bankCode, formData.value.country);
 
   const sepaQrCodeEl = document.getElementById('sepa');
   const spaydQrCodeEl = document.getElementById('spayd');
@@ -52,7 +45,8 @@ const selectPayer = (payer, i) => {
   const payerAmountInEur = formData.value.totalBillEur / (formData.value.totalBill / payer.amount);
   const sepaPayment = {
     name: "From PayMe",
-    iban: iban,
+    iban: formData.value.IBAN,
+    bic: formData.value.BIC,
     amount: payerAmountInEur,
     remittance: formData.value.paymentName,
   }
@@ -122,9 +116,9 @@ onMounted(() => {
     </div>
     <div class="detailView">
       <div v-if="selectedData" class="head">
-        <span @click="paymentType = 'spayd'" :class="{active: paymentType === 'spayd'}">QR code</span>
-        <!---<span @click="paymentType = 'sepa'" :class="{active: paymentType === 'sepa'}">SEPA</span>--->
-        <span @click="paymentType = 'paypal'" :class="{active: paymentType === 'paypal'}">PayPal</span>
+        <span v-if="formData.isSPAYD" @click="paymentType = 'spayd'" :class="{active: paymentType === 'spayd'}">QR code</span>
+        <span v-if="formData.isSEPA" @click="paymentType = 'sepa'" :class="{active: paymentType === 'sepa'}">SEPA</span>
+        <span v-if="formData.isPayPal" @click="paymentType = 'paypal'" :class="{active: paymentType === 'paypal'}">PayPal</span>
       </div>
       <div>
         <img id="spayd" :class="{hide: paymentType !== 'spayd'}">
@@ -224,6 +218,7 @@ onMounted(() => {
 .payView .selectionView {
   max-width: 290px;
   width: 100%;
+  padding-bottom: 25px;
 }
 .payView .selectionView .totalPriceLabel span {
   font-size: 25px;
@@ -314,5 +309,15 @@ onMounted(() => {
 .share-btn > a:hover {
   cursor: pointer;
   background: #00f869;
+}
+
+@media only screen and (max-width: 600px) {
+  .payView .selectionView, .payView .detailView {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .payView .selectionView .participantsBlock ul {
+    margin-right: -20px;
+  }
 }
 </style>
