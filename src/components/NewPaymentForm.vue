@@ -144,6 +144,7 @@ const updateIBAN = (update, name) => {
   const mainNumber = name === "mainNumber" ? update : formData.value?.mainNumber || "";
   const bankCode = name === "bankCode" ? update : formData.value?.bankCode || "";
   const country = name === "country" ? update : formData.value.country;
+  formData.value[name] = update;
   if (!validateBBAN(prefix, mainNumber, bankCode, country)) return;
   formData.value.IBAN = generateIBAN(prefix, mainNumber, bankCode, country);
 }
