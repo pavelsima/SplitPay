@@ -102,7 +102,18 @@ const submitHandler = async () => {
       return;
     }
 
-  const { email, country, currency, bankCode, mainNumber, prefix, doNotShortenUrl } = formData.value;
+  const {
+    email,
+    country,
+    currency,
+    bankCode,
+    mainNumber,
+    prefix,
+    doNotShortenUrl,
+    BIC,
+    isSPAYD,
+    isSEPA,
+    isPayPal } = formData.value;
   let URIencodedData = "";
   if (doNotShortenUrl) {
     const stringifiedData = JSON.stringify(formData.value);
@@ -112,7 +123,18 @@ const submitHandler = async () => {
   }
 
   isSaving.value = true;
-  const localStorageData = { email, country, currency, bankCode, mainNumber, prefix };
+  const localStorageData = {
+    email,
+    country,
+    currency,
+    bankCode,
+    mainNumber,
+    prefix,
+    BIC,
+    isSPAYD,
+    isSEPA,
+    isPayPal,
+  };
   localStorage.setItem("accounts", JSON.stringify(localStorageData));
   window.location.replace(`/payMe/${URIencodedData}`);
   isSaving.value = false;
