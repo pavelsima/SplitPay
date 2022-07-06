@@ -4,7 +4,6 @@ import cNames from "../dataObjects/countryNames.json";
 import cCurrency from "../dataObjects/countryCurrency.json";
 import PaypalButton from "../components/PaypalButton.vue";
 import { decode } from "js-base64";
-import { copyText } from "vue3-clipboard";
 
 import SocialShareBlock from "../components/SocialShareBlock.vue";
 
@@ -20,19 +19,10 @@ const countryCurrency = cCurrency;
 
 const formData = ref({});
 const selectedData = ref(null);
-const copyLabel = ref("Copy to clipboard");
 const paymentType = ref("spayd");
 
-const doCopy = (shareUrl) => {
-  copyText(shareUrl, undefined, (error) => {
-    if (!error) {
-      copyLabel.value = "Copied!";
-      setTimeout(() => (copyLabel.value = "Copy to clipboard"), 3000);
-    }
-  });
-};
-
 const selectPayer = (payer, i) => {
+  console.log(payer, i)
   const iban = generateIBAN(
     formData.value.prefix,
     formData.value.mainNumber,
@@ -188,7 +178,7 @@ onMounted(() => {
           </tr>
         </table>
 
-        <SocialShareBlock :selected-data="selectedData" :for-data="formData" />
+        <SocialShareBlock :selected-data="selectedData" :form-data="formData" />
       </div>
       <div class="noData" v-if="!selectedData">
         <h3>Please choose your section</h3>
