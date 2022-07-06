@@ -1,16 +1,17 @@
 <script setup>
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute } from "vue-router";
 import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { onMounted } from "vue";
+// config added localy
 import { db } from "../firebase";
-import cNames from "./countryNames.json";
-import cCurrency from "./countryCurrency.json";
-import currencyPricesJSON from "./currencyPrices.json";
-import { encode } from 'js-base64';
+import cNames from "../dataObjects/countryNames.json";
+import cCurrency from "../dataObjects/countryCurrency.json";
+import currencyPricesJSON from "../dataObjects/currencyPrices.json";
+import { encode } from "js-base64";
 import { generateIBAN, validateBBAN, validateIBAN } from "../methods/iban";
-import vueRecaptcha from 'vue3-recaptcha2'
+import vueRecaptcha from "vue3-recaptcha2";
 
-import { ref, nextTick } from 'vue'
+import { ref, nextTick } from "vue";
 const formData = ref({
   currency: "CZ",
   country: "CZ",
@@ -18,12 +19,12 @@ const formData = ref({
   isSPAYD: true,
   isSEPA: false,
   isPayPal: false,
-})
+});
 const isSaving = ref(false);
 const reCaptcha = ref(false);
 const isReCaptchaFailed = ref(false);
 const router = useRouter();
-const vueRecaptchaRef = ref(null)
+const vueRecaptchaRef = ref(null);
 const countryNames = cNames;
 const countryCurrency = cCurrency;
 const currencyPrices = currencyPricesJSON;
@@ -37,7 +38,7 @@ onMounted(() => {
       ...JSON.parse(localData),
     };
   }
-})
+});
 
 const recaptchaVerified = (response) => {
   isReCaptchaFailed.value = false;
@@ -50,7 +51,7 @@ const recaptchaExpired = () => {
 const recaptchaFailed = () => {
   isReCaptchaFailed.value = true;
   reCaptcha.value = false;
-}
+};
 
 const saveAndEncodeShortData = async (formData) => {
   try {
@@ -68,39 +69,41 @@ const saveAndEncodeShortData = async (formData) => {
     });
 
     return encode(stringifiedData);
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
     const stringifiedData = JSON.stringify(formData);
     return encode(stringifiedData);
   }
-}
+};
 
 const submitHandler = async () => {
   if (!reCaptcha.value) return;
 
-  if (formData.value.isSPAYD && !validateBBAN(
-    formData.value?.prefix || "",
-    formData.value.mainNumber,
-    formData.value.bankCode,
-    formData.value.country)) {
-      errorMsg.value = "Account number is not valid.";
-      isSaving.value = false;
-      return;
-    }
+  if (
+    formData.value.isSPAYD &&
+    !validateBBAN(
+      formData.value?.prefix || "",
+      formData.value.mainNumber,
+      formData.value.bankCode,
+      formData.value.country
+    )
+  ) {
+    errorMsg.value = "Account number is not valid.";
+    isSaving.value = false;
+    return;
+  }
 
-  if (formData.value.isSEPA && !validateIBAN(
-    formData.value.IBAN || "")) {
-      errorMsg.value = "IBAN is not valid.";
-      isSaving.value = false;
-      return;
-    }
+  if (formData.value.isSEPA && !validateIBAN(formData.value.IBAN || "")) {
+    errorMsg.value = "IBAN is not valid.";
+    isSaving.value = false;
+    return;
+  }
 
   if (formData.value.payers.length === 0) {
-      errorMsg.value = "You need to add at least one payer.";
-      isSaving.value = false;
-      return;
-    }
+    errorMsg.value = "You need to add at least one payer.";
+    isSaving.value = false;
+    return;
+  }
 
   const {
     email,
@@ -113,7 +116,8 @@ const submitHandler = async () => {
     BIC,
     isSPAYD,
     isSEPA,
-    isPayPal } = formData.value;
+    isPayPal,
+  } = formData.value;
   let URIencodedData = "";
   if (doNotShortenUrl) {
     const stringifiedData = JSON.stringify(formData.value);
@@ -138,22 +142,24 @@ const submitHandler = async () => {
   localStorage.setItem("accounts", JSON.stringify(localStorageData));
   window.location.replace(`/payMe/${URIencodedData}`);
   isSaving.value = false;
-}
+};
 const updateIBAN = (update, name) => {
   const prefix = name === "prefix" ? update : formData.value?.prefix || "";
-  const mainNumber = name === "mainNumber" ? update : formData.value?.mainNumber || "";
-  const bankCode = name === "bankCode" ? update : formData.value?.bankCode || "";
+  const mainNumber =
+    name === "mainNumber" ? update : formData.value?.mainNumber || "";
+  const bankCode =
+    name === "bankCode" ? update : formData.value?.bankCode || "";
   const country = name === "country" ? update : formData.value.country;
   formData.value[name] = update;
   if (!validateBBAN(prefix, mainNumber, bankCode, country)) return;
   formData.value.IBAN = generateIBAN(prefix, mainNumber, bankCode, country);
-}
+};
 const currencyChange = async () => {
   setTimeout(() => {
     formData.value.currency = formData.value.country;
     updateIBAN(formData.value.country, "country");
   }, 100);
-}
+};
 const totalBillChanged = async () => {
   setTimeout(() => {
     const selectedCurr = countryCurrency[formData.value.currency];
@@ -161,15 +167,15 @@ const totalBillChanged = async () => {
     const convertedPrice = formData.value.totalBill / currencyData.rate;
     formData.value.totalBillEur = convertedPrice.toFixed(0);
   }, 100);
-}
+};
 const paymentOptionAdded = (paymentOption) => {
   const localData = localStorage.getItem("accounts");
-  const parsedLocalData = JSON.parse(localData)
+  const parsedLocalData = JSON.parse(localData);
   const obj = {
     isSPAYD: ["prefix", "mainNumber", "bankCode"],
     isSEPA: ["receiver", "IBAN", "BIC"],
     isPayPal: ["email"],
-  }
+  };
 
   formData.value[paymentOption] = !formData.value[paymentOption];
   obj[paymentOption].map((option) => {
@@ -177,17 +183,17 @@ const paymentOptionAdded = (paymentOption) => {
       return updateIBAN();
     }
     formData.value[option] = parsedLocalData[option];
-  })
-}
+  });
+};
 const addPayer = () => {
   formData.value.payers.push({
     name: "",
     amount: 0,
   });
-}
+};
 const removePayer = (index) => {
   formData.value.payers.splice(index, 1);
-}
+};
 </script>
 
 <template>
@@ -199,9 +205,7 @@ const removePayer = (index) => {
     @submit="submitHandler"
   >
     <h1>Create new payment link</h1>
-    <p>
-      You can create payment link to separate invoice between your friends.
-    </p>
+    <p>You can create payment link to separate invoice between your friends.</p>
     <hr />
     <FormKit
       type="text"
@@ -286,7 +290,6 @@ const removePayer = (index) => {
         label="PayPal email"
         help="If you want to use paypal, please fill this in."
       />
-
     </div>
     <div class="priceBlock">
       <FormKit
@@ -310,7 +313,7 @@ const removePayer = (index) => {
         label="In EUR"
         help="Approximated"
         validation="required"
-        style="max-width: 100px;"
+        style="max-width: 100px"
       />
     </div>
 
@@ -319,11 +322,7 @@ const removePayer = (index) => {
     <div class="payerBlock" v-for="(payer, i) in formData.payers" :key="i">
       <label>
         Payer Name
-        <input
-          type="text"
-          v-model="payer.name"
-          label="Payer name"
-        />
+        <input type="text" v-model="payer.name" label="Payer name" />
       </label>
       <label>
         Corresponding amount
@@ -335,7 +334,7 @@ const removePayer = (index) => {
             validation="required"
           />
           <span class="currency">
-             {{countryCurrency[formData.currency]}}
+            {{ countryCurrency[formData.currency] }}
           </span>
         </span>
       </label>
@@ -343,11 +342,7 @@ const removePayer = (index) => {
     </div>
 
     <div class="add-payer-button">
-      <FormKit
-        type="button"
-        label="Add payer"
-        @click="addPayer"
-      />
+      <FormKit type="button" label="Add payer" @click="addPayer" />
     </div>
 
     <vue-recaptcha
@@ -358,13 +353,18 @@ const removePayer = (index) => {
       @verify="recaptchaVerified"
       @expire="recaptchaExpired"
       @fail="recaptchaFailed"
-      ref="vueRecaptchaRef">
+      ref="vueRecaptchaRef"
+    >
     </vue-recaptcha>
 
-    <p v-if="isReCaptchaFailed" style="color: red;">reCaptcha failed, please try again.</p>
+    <p v-if="isReCaptchaFailed" style="color: red">
+      reCaptcha failed, please try again.
+    </p>
 
     <div class="grayText">
-      <p>Encrypted data are stored in the database for purpose of URL shortening.</p>
+      <p>
+        Encrypted data are stored in the database for purpose of URL shortening.
+      </p>
       <FormKit
         type="checkbox"
         label="Do not shorten the URL"
@@ -373,8 +373,7 @@ const removePayer = (index) => {
       />
     </div>
 
-    <p v-if="errorMsg" style="color: red;">{{errorMsg}}</p>
-
+    <p v-if="errorMsg" style="color: red">{{ errorMsg }}</p>
   </FormKit>
   <h3 v-else id="savingHeader">Saving data...</h3>
 </template>
@@ -460,7 +459,8 @@ const removePayer = (index) => {
 .reCaptcha {
   padding: 10px 0;
 }
-.grayText, .grayText .formkit-help {
+.grayText,
+.grayText .formkit-help {
   color: #bbbbbb;
   font-size: 13px;
 }

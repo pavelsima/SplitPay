@@ -1,17 +1,19 @@
 <script setup>
-import { useRouter, useRoute } from 'vue-router'
-import cNames from "../components/countryNames.json";
-import cCurrency from "../components/countryCurrency.json";
+import { useRouter, useRoute } from "vue-router";
+import cNames from "../dataObjects/countryNames.json";
+import cCurrency from "../dataObjects/countryCurrency.json";
 import PaypalButton from "../components/PaypalButton.vue";
-import { decode } from 'js-base64';
-import { copyText } from 'vue3-clipboard';
+import { decode } from "js-base64";
+import { copyText } from "vue3-clipboard";
+
+import SocialShareBlock from "../components/SocialShareBlock.vue";
 
 import { generateIBAN } from "../methods/iban";
 import generateQrCode from "sepa-payment-qr-code";
-import spayd from 'spayd';
-import qrcode from 'qrcode';
+import spayd from "spayd";
+import qrcode from "qrcode";
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 const route = useRoute();
 const countryNames = cNames;
 const countryCurrency = cCurrency;
@@ -25,16 +27,21 @@ const doCopy = (shareUrl) => {
   copyText(shareUrl, undefined, (error) => {
     if (!error) {
       copyLabel.value = "Copied!";
-      setTimeout(() => copyLabel.value = "Copy to clipboard", 3000);
+      setTimeout(() => (copyLabel.value = "Copy to clipboard"), 3000);
     }
-  })
-}
+  });
+};
 
 const selectPayer = (payer, i) => {
-  const iban = generateIBAN(formData.value.prefix, formData.value.mainNumber, formData.value.bankCode, formData.value.country);
+  const iban = generateIBAN(
+    formData.value.prefix,
+    formData.value.mainNumber,
+    formData.value.bankCode,
+    formData.value.country
+  );
 
-  const sepaQrCodeEl = document.getElementById('sepa');
-  const spaydQrCodeEl = document.getElementById('spayd');
+  const sepaQrCodeEl = document.getElementById("sepa");
+  const spaydQrCodeEl = document.getElementById("spayd");
 
   const spaydPayment = {
     acc: iban,
@@ -42,24 +49,27 @@ const selectPayer = (payer, i) => {
     cc: countryCurrency[formData.value.currency],
     msg: formData.value.paymentName,
   };
-  const payerAmountInEur = formData.value.totalBillEur / (formData.value.totalBill / payer.amount);
+  const payerAmountInEur =
+    formData.value.totalBillEur / (formData.value.totalBill / payer.amount);
   const sepaPayment = {
     name: "From PayMe",
     iban: formData.value.IBAN,
     bic: formData.value.BIC,
     amount: payerAmountInEur,
     remittance: formData.value.paymentName,
-  }
+  };
   const sepaString = generateQrCode(sepaPayment);
   const spaydString = spayd(spaydPayment);
-  qrcode.toDataURL(sepaString)
+  qrcode
+    .toDataURL(sepaString)
     .then((url) => {
-      sepaQrCodeEl.setAttribute('src', url);
+      sepaQrCodeEl.setAttribute("src", url);
     })
     .catch(console.error);
-  qrcode.toDataURL(spaydString)
+  qrcode
+    .toDataURL(spaydString)
     .then((url) => {
-      spaydQrCodeEl.setAttribute('src', url);
+      spaydQrCodeEl.setAttribute("src", url);
     })
     .catch(console.error);
   const shareUrl = formData.value?.shortId
@@ -72,7 +82,7 @@ const selectPayer = (payer, i) => {
     index: +i,
     shareUrl,
   };
-}
+};
 
 onMounted(() => {
   formData.value = JSON.parse(decode(route.params.data));
@@ -81,19 +91,20 @@ onMounted(() => {
     const payer = formData.value.payers[index];
     selectPayer(payer, index);
   }
-})
+});
 </script>
 
 <template>
   <div class="payView">
     <div class="selectionView">
-      <h1>{{formData.paymentName}}</h1>
+      <h1>{{ formData.paymentName }}</h1>
 
       <div class="totalPriceLabel">
-        <label>
-          Total price to split:
-        </label>
-        <span>{{formData.totalBill}} {{countryCurrency[formData.currency]}}</span>
+        <label> Total price to split: </label>
+        <span
+          >{{ formData.totalBill }}
+          {{ countryCurrency[formData.currency] }}</span
+        >
       </div>
 
       <div class="participantsBlock">
@@ -103,11 +114,11 @@ onMounted(() => {
             v-for="(payer, i) in formData.payers"
             :key="i"
             @click="selectPayer(payer, i)"
-            :class="{active: i === selectedData?.index}"
+            :class="{ active: i === selectedData?.index }"
           >
-            <span class="payerName">{{payer.name}}</span>
+            <span class="payerName">{{ payer.name }}</span>
             <span class="payerAmount">
-              {{payer.amount}} {{countryCurrency[formData.currency]}}
+              {{ payer.amount }} {{ countryCurrency[formData.currency] }}
               <span class="arrow">></span>
             </span>
           </li>
@@ -116,14 +127,32 @@ onMounted(() => {
     </div>
     <div class="detailView">
       <div v-if="selectedData" class="head">
-        <span v-if="formData.isSPAYD" @click="paymentType = 'spayd'" :class="{active: paymentType === 'spayd'}">QR code</span>
-        <span v-if="formData.isSEPA" @click="paymentType = 'sepa'" :class="{active: paymentType === 'sepa'}">SEPA</span>
-        <span v-if="formData.isPayPal" @click="paymentType = 'paypal'" :class="{active: paymentType === 'paypal'}">PayPal</span>
+        <span
+          v-if="formData.isSPAYD"
+          @click="paymentType = 'spayd'"
+          :class="{ active: paymentType === 'spayd' }"
+          >QR code</span
+        >
+        <span
+          v-if="formData.isSEPA"
+          @click="paymentType = 'sepa'"
+          :class="{ active: paymentType === 'sepa' }"
+          >SEPA</span
+        >
+        <span
+          v-if="formData.isPayPal"
+          @click="paymentType = 'paypal'"
+          :class="{ active: paymentType === 'paypal' }"
+          >PayPal</span
+        >
       </div>
       <div>
-        <img id="spayd" :class="{hide: paymentType !== 'spayd'}">
-        <img id="sepa" :class="{hide: paymentType !== 'sepa'}">
-        <div v-if="paymentType === 'paypal' && formData.email" class="paypalForm">
+        <img id="spayd" :class="{ hide: paymentType !== 'spayd' }" />
+        <img id="sepa" :class="{ hide: paymentType !== 'sepa' }" />
+        <div
+          v-if="paymentType === 'paypal' && formData.email"
+          class="paypalForm"
+        >
           <PaypalButton
             :currency="countryCurrency[formData.currency]"
             :price="selectedData.amount"
@@ -137,7 +166,7 @@ onMounted(() => {
         <table>
           <tr>
             <td>
-              <h3>{{selectedData.name}}</h3>
+              <h3>{{ selectedData.name }}</h3>
             </td>
           </tr>
           <tr>
@@ -145,7 +174,8 @@ onMounted(() => {
               <strong>Account number: </strong>
             </td>
             <td>
-              {{formData.prefix ? `${formData.prefix}-` : ""}}{{formData.mainNumber}}/{{formData.bankCode}}
+              {{ formData.prefix ? `${formData.prefix}-` : ""
+              }}{{ formData.mainNumber }}/{{ formData.bankCode }}
             </td>
           </tr>
           <tr>
@@ -153,50 +183,12 @@ onMounted(() => {
               <strong>Amount: </strong>
             </td>
             <td>
-              {{selectedData.amount}} {{countryCurrency[formData.currency]}}
+              {{ selectedData.amount }} {{ countryCurrency[formData.currency] }}
             </td>
           </tr>
         </table>
 
-        <h3 style="padding-left: 25px;">Share</h3>
-        <div class="share-btn">
-          <ShareNetwork
-            network="messenger"
-            :url="selectedData.shareUrl"
-            :title="`Lets split this bill: ${formData.paymentName}`"
-            :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
-          >
-            Messenger
-          </ShareNetwork>
-          <ShareNetwork
-            network="telegram"
-            :url="selectedData.shareUrl"
-            :title="`Lets split this bill: ${formData.paymentName}`"
-            :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
-          >
-            Telegram
-          </ShareNetwork>
-          <ShareNetwork
-            network="whatsapp"
-            :url="selectedData.shareUrl"
-            :title="`Lets split this bill: ${formData.paymentName}`"
-            :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
-          >
-            WhatsApp
-          </ShareNetwork>
-          <ShareNetwork
-            network="email"
-            :url="selectedData.shareUrl"
-            :title="`Lets split this bill: ${formData.paymentName}`"
-            :description="`Total price to split: ${formData.totalBill} ${countryCurrency[formData.currency]}`"
-          >
-            Email
-          </ShareNetwork>
-          <br />
-          <a @click="doCopy(selectedData.shareUrl)">
-            {{copyLabel}}
-          </a>
-        </div>
+        <SocialShareBlock :selected-data="selectedData" :for-data="formData" />
       </div>
       <div class="noData" v-if="!selectedData">
         <h3>Please choose your section</h3>
@@ -238,9 +230,10 @@ onMounted(() => {
   padding: 5px 0;
   margin: 1px 0;
 }
-.payView .selectionView .participantsBlock ul > li:hover, .payView .selectionView .participantsBlock ul > li.active {
+.payView .selectionView .participantsBlock ul > li:hover,
+.payView .selectionView .participantsBlock ul > li.active {
   background: #01e3aa;
-  color: #ffffff
+  color: #ffffff;
 }
 .payView .selectionView .participantsBlock ul > li > span {
   padding: 5px 10px;
@@ -293,26 +286,10 @@ onMounted(() => {
 .detailView .paymentDetails table > tr > td {
   padding: 2px 5px;
 }
-.share-btn {
-  line-height: 35px;
-  padding: 0 20px 20px 20px;
-  text-align: center;
-}
-.share-btn > a {
-  padding: 5px 10px;
-  margin: 2px;
-  border-radius: 15px;
-  background: #00e3a9;
-  color: #ffffff;
-  text-decoration: none;
-}
-.share-btn > a:hover {
-  cursor: pointer;
-  background: #00f869;
-}
 
 @media only screen and (max-width: 600px) {
-  .payView .selectionView, .payView .detailView {
+  .payView .selectionView,
+  .payView .detailView {
     max-width: 100% !important;
     width: 100% !important;
   }

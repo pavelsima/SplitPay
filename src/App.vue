@@ -17,13 +17,14 @@ import { RouterLink, RouterView } from "vue-router";
   <RouterView class="content" />
 
   <div class="footer">
+    <a href="/about">About this app</a><br/>
     Created by <a href="https://pavelsima.eu/">Pavel Sima</a> | 2022
   </div>
 </template>
 
 <style>
 html {
-  background: rgb(0,255,81);
+  background: rgb(0, 255, 81);
   background: linear-gradient(0deg, #00ff51 0%, #01e3aa 100%);
   min-height: -webkit-fill-available;
   height: auto;
@@ -32,7 +33,8 @@ body {
   width: 100%;
 }
 #app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;

@@ -1,9 +1,10 @@
 <script setup>
-import { useRoute } from 'vue-router'
+import { useRoute } from "vue-router";
 import { doc, getDoc } from "firebase/firestore";
+// config added localy
 import { db } from "../firebase";
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 const route = useRoute();
 const error = ref(null);
 
@@ -19,13 +20,13 @@ onMounted(async () => {
     return;
   }
   error.value = "Payment data not found.";
-})
+});
 </script>
 
 <template>
   <div class="shortView">
     <h3 v-if="!error">Loading data...</h3>
-    <h3 v-else>{{error}}</h3>
+    <h3 v-else>{{ error }}</h3>
   </div>
 </template>
 

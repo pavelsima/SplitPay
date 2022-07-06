@@ -1,58 +1,47 @@
 # SplitPay
+Live application can be found at https://splitpay.link/
+## Table of Contents
 
-This template should help get you started developing with Vue 3 in Vite.
+- [About](#about)
+- [Getting Started](#getting_started)
+- [Usage](#usage)
+- [License](LICENSE)
 
-## Recommended IDE Setup
+## About <a name = "about"></a>
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin).
+Small project for creating payment link with all necessary informations. It can generate SEPA, SPD and also allow pay via PayPal.
 
-## Type Support for `.vue` Imports in TS
+## Getting Started <a name = "getting_started"></a>
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+If you wnat to contribute, just create pull request with your modifications and I will definitely check it out.
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+### Prerequisites
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+What do you need for this project? (at least what I am running it on)
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
-yarn install
+```
+node => 16.10.0
+yarn => 1.22.19
 ```
 
-### Compile and Hot-Reload for Development
+### Installing
 
-```sh
+How to install all necessary packages? - simple just run the following command
+
+```
+yarn
+```
+
+And yarn will install everything you need.
+
+
+## Usage <a name = "usage"></a>
+
+To run development server just run
+```
 yarn dev
 ```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
+For building a production code run
+```
 yarn build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-yarn test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-yarn lint
-```
-
-### Push build dir
-
-```sh
-./node_modules/.bin/push-dir --dir=dist --branch=build
 ```
