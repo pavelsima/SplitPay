@@ -22,7 +22,6 @@ const selectedData = ref(null);
 const paymentType = ref("spayd");
 
 const selectPayer = (payer, i) => {
-  console.log(payer, i)
   const iban = generateIBAN(
     formData.value.prefix,
     formData.value.mainNumber,
