@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from "vue-router";
-import cNames from "../dataObjects/countryNames.json";
 import cCurrency from "../dataObjects/countryCurrency.json";
-import PaypalButton from "../components/PaypalButton.vue";
 import { decode } from "js-base64";
 import type { Payer, FormData, Json, SelectedData } from "../types/Form";
 
 import SocialShareBlock from "../components/SocialShareBlock.vue";
+import PaypalButton from "../components/PaypalButton.vue";
+import QrCode from "../components/QrCode.vue";
 
 import { generateIBAN } from "../services/iban";
 import generateQrCode from "sepa-payment-qr-code";
@@ -15,25 +15,17 @@ import qrcode from "qrcode";
 
 import { ref, onMounted } from "vue";
 const route = useRoute();
-const countryNames = cNames;
 const countryCurrency = cCurrency as Json;
 
 const formData = ref<FormData>();
 const selectedData = ref<SelectedData>();
 const paymentType = ref("spayd");
+const sepaString = ref<string>()
+const spaydString = ref<string>();
 
 const selectPayer = (payer: Payer, i: number) => {
   if (!formData.value) return;
-
-  const iban = generateIBAN(
-    formData.value.prefix,
-    formData.value.mainNumber,
-    formData.value.bankCode,
-    formData.value.country
-  );
-
-  const sepaQrCodeEl = document.getElementById("sepa");
-  const spaydQrCodeEl = document.getElementById("spayd");
+  const iban = formData.value.IBAN || "";
 
   const spaydPayment = {
     acc: iban,
@@ -41,29 +33,21 @@ const selectPayer = (payer: Payer, i: number) => {
     cc: countryCurrency[formData.value.currency],
     msg: formData.value?.paymentName,
   };
-  const payerAmountInEur =
-    formData.value.totalBillEur / (formData.value.totalBill / payer.amount);
+  const totalIntInEur = parseInt(formData.value.totalBillEur || "");
+  const payerAmountInEur = totalIntInEur / ((formData.value.totalBill || 0) / payer.amount);
   const sepaPayment = {
     name: "From PayMe",
-    iban: formData.value.IBAN,
+    iban: iban,
     bic: formData.value.BIC,
     amount: payerAmountInEur,
     remittance: formData.value.paymentName,
   };
-  const sepaString = generateQrCode(sepaPayment);
-  const spaydString = spayd(spaydPayment);
-  qrcode
-    .toDataURL(sepaString)
-    .then((url: string) => {
-      sepaQrCodeEl?.setAttribute("src", url);
-    })
-    .catch(console.error);
-  qrcode
-    .toDataURL(spaydString)
-    .then((url: string) => {
-      spaydQrCodeEl?.setAttribute("src", url);
-    })
-    .catch(console.error);
+  console.log(sepaPayment)
+  sepaString.value = generateQrCode(sepaPayment);
+  spaydString.value = spayd(spaydPayment);
+
+  console.log(sepaString.value, spaydString.value)
+
   const shareUrl = formData.value?.shortId
     ? `${window.location.origin}/short/${formData.value.shortId}/${i}`
     : `${window.location.origin}/payMe/${route.params.data}/${i}`;
@@ -80,7 +64,7 @@ onMounted(() => {
   const routeData = route.params.data as string;
   formData.value = JSON.parse(decode(routeData));
   const index = parseInt(route.params.index as string);
-  const payer = index ? formData.value?.payers[index] : null;
+  const payer = index ? formData.value?.payers?.[index] : null;
   if (payer) {
     selectPayer(payer, index);
   }
@@ -140,8 +124,18 @@ onMounted(() => {
         >
       </div>
       <div>
-        <img id="spayd" :class="{ hide: paymentType !== 'spayd' }" />
-        <img id="sepa" :class="{ hide: paymentType !== 'sepa' }" />
+        <QrCode
+          v-if="spaydString"
+          image-id="spayd"
+          :data="spaydString"
+          :class="{ hide: paymentType !== 'spayd' }"
+        />
+        <QrCode
+          v-if="sepaString"
+          image-id="sepa"
+          :data="sepaString"
+          :class="{ hide: paymentType !== 'sepa' }"
+        />
         <div
           v-if="paymentType === 'paypal' && formData?.email"
           class="paypalForm"
@@ -181,7 +175,11 @@ onMounted(() => {
           </tr>
         </table>
 
-        <SocialShareBlock :selected-data="selectedData" :form-data="formData" />
+        <SocialShareBlock
+          v-if="formData"
+          :selected-data="selectedData"
+          :form-data="formData"
+        />
       </div>
       <div class="noData" v-if="!selectedData">
         <h3>Please choose your section</h3>

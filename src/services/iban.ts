@@ -16,13 +16,14 @@ const generateAccNumber = (
 };
 
 export const generateIBAN = (
-  accNumberPrefix: string,
-  accMainNumber: string,
-  bankCode: string,
-  country: string
+  accNumberPrefix?: string,
+  accMainNumber?: string,
+  bankCode?: string,
+  country?: string
 ) => {
+  if (!accMainNumber || !bankCode || !country) return "";
   const accountNumber = generateAccNumber(
-    accNumberPrefix,
+    accNumberPrefix || "",
     accMainNumber,
     bankCode
   );
@@ -30,13 +31,14 @@ export const generateIBAN = (
 };
 
 export const validateBBAN = (
-  accNumberPrefix: string,
-  accMainNumber: string,
-  bankCode: string,
-  country: string
+  accNumberPrefix?: string,
+  accMainNumber?: string,
+  bankCode?: string,
+  country?: string
 ) => {
+  if (!accMainNumber || !bankCode || !country) return false;
   const accountNumber = generateAccNumber(
-    accNumberPrefix,
+    accNumberPrefix || "",
     accMainNumber,
     bankCode
   );

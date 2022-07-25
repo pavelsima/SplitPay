@@ -84,7 +84,7 @@ const submitHandler = async () => {
   if (
     formData.value.isSPAYD &&
     !validateBBAN(
-      formData.value?.prefix || "",
+      formData.value.prefix,
       formData.value.mainNumber,
       formData.value.bankCode,
       formData.value.country

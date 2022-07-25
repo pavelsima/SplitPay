@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { defineProps, toRefs, ref } from "vue";
+import type { FormData, SelectedData } from "../types/Form";
 import { copyText } from "vue3-clipboard";
 import countryCurrency from "../dataObjects/countryCurrency";
 
-const props = defineProps(["formData", "selectedData"]);
+const props = defineProps({
+  formData: { type: Object, required: true },
+  selectedData: { type: Object, required: true },
+});
 const { formData, selectedData } = toRefs(props);
 const copyLabel = ref("Copy to clipboard");
 
