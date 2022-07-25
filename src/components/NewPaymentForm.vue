@@ -1,33 +1,35 @@
-<script setup>
+<script setup lang="ts">
 import { useRouter, useRoute } from "vue-router";
 import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { onMounted } from "vue";
+import type { Payer, FormData, Json, KeysOfType } from "../types/Form";
 // config added localy
 import { db } from "../firebase";
 import cNames from "../dataObjects/countryNames.json";
 import cCurrency from "../dataObjects/countryCurrency.json";
 import currencyPricesJSON from "../dataObjects/currencyPrices.json";
 import { encode } from "js-base64";
-import { generateIBAN, validateBBAN, validateIBAN } from "../methods/iban";
+import { generateIBAN, validateBBAN, validateIBAN } from "../services/iban";
 import vueRecaptcha from "vue3-recaptcha2";
 
-import { ref, nextTick } from "vue";
-const formData = ref({
+import { ref } from "vue";
+const formData = ref<FormData>({
+  paymentName: "",
   currency: "CZ",
   country: "CZ",
   payers: [],
   isSPAYD: true,
   isSEPA: false,
   isPayPal: false,
+  doNotShortenUrl: false,
 });
 const isSaving = ref(false);
 const reCaptcha = ref(false);
 const isReCaptchaFailed = ref(false);
-const router = useRouter();
-const vueRecaptchaRef = ref(null);
-const countryNames = cNames;
-const countryCurrency = cCurrency;
-const currencyPrices = currencyPricesJSON;
+const vueRecaptchaRef = ref<HTMLElement | null>(null);
+const countryNames = cNames as Json;
+const countryCurrency = cCurrency as Json;
+const currencyPrices = currencyPricesJSON as Json;
 const errorMsg = ref("");
 
 onMounted(() => {
@@ -40,20 +42,20 @@ onMounted(() => {
   }
 });
 
-const recaptchaVerified = (response) => {
+const recaptchaVerified = () => {
   isReCaptchaFailed.value = false;
   reCaptcha.value = true;
 };
 const recaptchaExpired = () => {
   reCaptcha.value = false;
-  vueRecaptchaRef.value.reset();
+  vueRecaptchaRef.value?.reset();
 };
 const recaptchaFailed = () => {
   isReCaptchaFailed.value = true;
   reCaptcha.value = false;
 };
 
-const saveAndEncodeShortData = async (formData) => {
+const saveAndEncodeShortData = async (formData: FormData) => {
   try {
     const docRef = await addDoc(collection(db, "short"), {
       data: "",
@@ -99,7 +101,7 @@ const submitHandler = async () => {
     return;
   }
 
-  if (formData.value.payers.length === 0) {
+  if (formData.value.payers?.length === 0) {
     errorMsg.value = "You need to add at least one payer.";
     isSaving.value = false;
     return;
@@ -143,14 +145,18 @@ const submitHandler = async () => {
   window.location.replace(`/payMe/${URIencodedData}`);
   isSaving.value = false;
 };
-const updateIBAN = (update, name) => {
+
+const updateIBAN = (update?: string, name?: string) => {
   const prefix = name === "prefix" ? update : formData.value?.prefix || "";
   const mainNumber =
     name === "mainNumber" ? update : formData.value?.mainNumber || "";
   const bankCode =
     name === "bankCode" ? update : formData.value?.bankCode || "";
   const country = name === "country" ? update : formData.value.country;
-  formData.value[name] = update;
+  if (name && update) {
+    const propKey: KeysOfType<FormData, string> = name;
+    formData.value[propKey] = update;
+  }
   if (!validateBBAN(prefix, mainNumber, bankCode, country)) return;
   formData.value.IBAN = generateIBAN(prefix, mainNumber, bankCode, country);
 };
@@ -164,12 +170,15 @@ const totalBillChanged = async () => {
   setTimeout(() => {
     const selectedCurr = countryCurrency[formData.value.currency];
     const currencyData = currencyPrices[selectedCurr?.toLowerCase()];
-    const convertedPrice = formData.value.totalBill / currencyData.rate;
+    const convertedPrice = formData.value.totalBill
+      ? formData.value.totalBill / currencyData.rate : 0;
     formData.value.totalBillEur = convertedPrice.toFixed(0);
   }, 100);
 };
-const paymentOptionAdded = (paymentOption) => {
+const paymentOptionAdded = (paymentOption: string) => {
   const localData = localStorage.getItem("accounts");
+  if (!localData) return;
+
   const parsedLocalData = JSON.parse(localData);
   const obj = {
     isSPAYD: ["prefix", "mainNumber", "bankCode"],
@@ -177,22 +186,27 @@ const paymentOptionAdded = (paymentOption) => {
     isPayPal: ["email"],
   };
 
+  const optionKey: KeysOfType<FormData, string> = paymentOption;
   formData.value[paymentOption] = !formData.value[paymentOption];
-  obj[paymentOption].map((option) => {
+  obj[paymentOption as keyof typeof obj].map((option: string) => {
     if (option === "IBAN") {
       return updateIBAN();
     }
-    formData.value[option] = parsedLocalData[option];
+    formData.value[option as keyof FormData] = parsedLocalData[option];
   });
 };
 const addPayer = () => {
+  if (!formData.value.payers) {
+    formData.value.payers = [];
+  }
+
   formData.value.payers.push({
     name: "",
     amount: 0,
   });
 };
-const removePayer = (index) => {
-  formData.value.payers.splice(index, 1);
+const removePayer = (index: number) => {
+  formData.value.payers?.splice(index, 1);
 };
 </script>
 
@@ -317,7 +331,7 @@ const removePayer = (index) => {
       />
     </div>
 
-    <h2 v-if="formData.payers.length > 0">Payers</h2>
+    <h2 v-if="formData?.payers && formData.payers.length > 0">Payers</h2>
 
     <div class="payerBlock" v-for="(payer, i) in formData.payers" :key="i">
       <label>

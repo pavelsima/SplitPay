@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useRoute } from "vue-router";
 import { doc, getDoc } from "firebase/firestore";
 // config added localy
@@ -6,11 +6,11 @@ import { db } from "../firebase";
 
 import { ref, onMounted } from "vue";
 const route = useRoute();
-const error = ref(null);
+const error = ref<string>();
 
 onMounted(async () => {
-  const dataId = route.params.dataId;
-  const index = route.params.index;
+  const dataId = route.params.dataId as string;
+  const index = route.params.index as string;
 
   const docRef = doc(db, "short", dataId);
   const docSnap = await getDoc(docRef);

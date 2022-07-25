@@ -1,13 +1,14 @@
-<script setup>
+<script setup lang="ts">
 import { useRouter, useRoute } from "vue-router";
 import cNames from "../dataObjects/countryNames.json";
 import cCurrency from "../dataObjects/countryCurrency.json";
 import PaypalButton from "../components/PaypalButton.vue";
 import { decode } from "js-base64";
+import type { Payer, FormData, Json, SelectedData } from "../types/Form";
 
 import SocialShareBlock from "../components/SocialShareBlock.vue";
 
-import { generateIBAN } from "../methods/iban";
+import { generateIBAN } from "../services/iban";
 import generateQrCode from "sepa-payment-qr-code";
 import spayd from "spayd";
 import qrcode from "qrcode";
@@ -15,13 +16,15 @@ import qrcode from "qrcode";
 import { ref, onMounted } from "vue";
 const route = useRoute();
 const countryNames = cNames;
-const countryCurrency = cCurrency;
+const countryCurrency = cCurrency as Json;
 
-const formData = ref({});
-const selectedData = ref(null);
+const formData = ref<FormData>();
+const selectedData = ref<SelectedData>();
 const paymentType = ref("spayd");
 
-const selectPayer = (payer, i) => {
+const selectPayer = (payer: Payer, i: number) => {
+  if (!formData.value) return;
+
   const iban = generateIBAN(
     formData.value.prefix,
     formData.value.mainNumber,
@@ -36,7 +39,7 @@ const selectPayer = (payer, i) => {
     acc: iban,
     am: payer.amount.toFixed(2),
     cc: countryCurrency[formData.value.currency],
-    msg: formData.value.paymentName,
+    msg: formData.value?.paymentName,
   };
   const payerAmountInEur =
     formData.value.totalBillEur / (formData.value.totalBill / payer.amount);
@@ -51,14 +54,14 @@ const selectPayer = (payer, i) => {
   const spaydString = spayd(spaydPayment);
   qrcode
     .toDataURL(sepaString)
-    .then((url) => {
-      sepaQrCodeEl.setAttribute("src", url);
+    .then((url: string) => {
+      sepaQrCodeEl?.setAttribute("src", url);
     })
     .catch(console.error);
   qrcode
     .toDataURL(spaydString)
-    .then((url) => {
-      spaydQrCodeEl.setAttribute("src", url);
+    .then((url: string) => {
+      spaydQrCodeEl?.setAttribute("src", url);
     })
     .catch(console.error);
   const shareUrl = formData.value?.shortId
@@ -74,10 +77,11 @@ const selectPayer = (payer, i) => {
 };
 
 onMounted(() => {
-  formData.value = JSON.parse(decode(route.params.data));
-  const index = route.params.index;
-  if (index) {
-    const payer = formData.value.payers[index];
+  const routeData = route.params.data as string;
+  formData.value = JSON.parse(decode(routeData));
+  const index = parseInt(route.params.index as string);
+  const payer = index ? formData.value?.payers[index] : null;
+  if (payer) {
     selectPayer(payer, index);
   }
 });
@@ -86,12 +90,12 @@ onMounted(() => {
 <template>
   <div class="payView">
     <div class="selectionView">
-      <h1>{{ formData.paymentName }}</h1>
+      <h1>{{ formData?.paymentName }}</h1>
 
-      <div class="totalPriceLabel">
+      <div v-if="formData" class="totalPriceLabel">
         <label> Total price to split: </label>
         <span
-          >{{ formData.totalBill }}
+          >{{ formData?.totalBill }}
           {{ countryCurrency[formData.currency] }}</span
         >
       </div>
@@ -100,13 +104,13 @@ onMounted(() => {
         <h2>Participants</h2>
         <ul>
           <li
-            v-for="(payer, i) in formData.payers"
+            v-for="(payer, i) in formData?.payers"
             :key="i"
             @click="selectPayer(payer, i)"
             :class="{ active: i === selectedData?.index }"
           >
             <span class="payerName">{{ payer.name }}</span>
-            <span class="payerAmount">
+            <span v-if="formData" class="payerAmount">
               {{ payer.amount }} {{ countryCurrency[formData.currency] }}
               <span class="arrow">></span>
             </span>
@@ -117,19 +121,19 @@ onMounted(() => {
     <div class="detailView">
       <div v-if="selectedData" class="head">
         <span
-          v-if="formData.isSPAYD"
+          v-if="formData?.isSPAYD"
           @click="paymentType = 'spayd'"
           :class="{ active: paymentType === 'spayd' }"
           >QR code</span
         >
         <span
-          v-if="formData.isSEPA"
+          v-if="formData?.isSEPA"
           @click="paymentType = 'sepa'"
           :class="{ active: paymentType === 'sepa' }"
           >SEPA</span
         >
         <span
-          v-if="formData.isPayPal"
+          v-if="formData?.isPayPal"
           @click="paymentType = 'paypal'"
           :class="{ active: paymentType === 'paypal' }"
           >PayPal</span
@@ -139,14 +143,14 @@ onMounted(() => {
         <img id="spayd" :class="{ hide: paymentType !== 'spayd' }" />
         <img id="sepa" :class="{ hide: paymentType !== 'sepa' }" />
         <div
-          v-if="paymentType === 'paypal' && formData.email"
+          v-if="paymentType === 'paypal' && formData?.email"
           class="paypalForm"
         >
           <PaypalButton
             :currency="countryCurrency[formData.currency]"
-            :price="selectedData.amount"
+            :price="selectedData?.amount"
             :name="formData.paymentName"
-            :index="selectedData.index"
+            :index="selectedData?.index"
             :email="formData.email"
           />
         </div>
@@ -155,7 +159,7 @@ onMounted(() => {
         <table>
           <tr>
             <td>
-              <h3>{{ selectedData.name }}</h3>
+              <h3>{{ selectedData?.name }}</h3>
             </td>
           </tr>
           <tr>
@@ -163,16 +167,16 @@ onMounted(() => {
               <strong>Account number: </strong>
             </td>
             <td>
-              {{ formData.prefix ? `${formData.prefix}-` : ""
-              }}{{ formData.mainNumber }}/{{ formData.bankCode }}
+              {{ formData?.prefix ? `${formData?.prefix}-` : ""
+              }}{{ formData?.mainNumber }}/{{ formData?.bankCode }}
             </td>
           </tr>
           <tr>
             <td>
               <strong>Amount: </strong>
             </td>
-            <td>
-              {{ selectedData.amount }} {{ countryCurrency[formData.currency] }}
+            <td v-if="formData">
+              {{ selectedData?.amount }} {{ countryCurrency[formData.currency] }}
             </td>
           </tr>
         </table>

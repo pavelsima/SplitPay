@@ -1,6 +1,10 @@
 import IBAN from "fast-iban";
 
-const generateAccNumber = (accNumberPrefix, accMainNumber, bankCode) => {
+const generateAccNumber = (
+  accNumberPrefix: string,
+  accMainNumber: string,
+  bankCode: string
+) => {
   const remainingPrefixSize = 6 - (accNumberPrefix?.length || 0);
   let prefix = [...Array(remainingPrefixSize)].reduce((total, n) => {
     return `${total}0`;
@@ -12,10 +16,10 @@ const generateAccNumber = (accNumberPrefix, accMainNumber, bankCode) => {
 };
 
 export const generateIBAN = (
-  accNumberPrefix,
-  accMainNumber,
-  bankCode,
-  country
+  accNumberPrefix: string,
+  accMainNumber: string,
+  bankCode: string,
+  country: string
 ) => {
   const accountNumber = generateAccNumber(
     accNumberPrefix,
@@ -26,10 +30,10 @@ export const generateIBAN = (
 };
 
 export const validateBBAN = (
-  accNumberPrefix,
-  accMainNumber,
-  bankCode,
-  country
+  accNumberPrefix: string,
+  accMainNumber: string,
+  bankCode: string,
+  country: string
 ) => {
   const accountNumber = generateAccNumber(
     accNumberPrefix,
@@ -39,6 +43,6 @@ export const validateBBAN = (
   return IBAN.validateBBAN(accountNumber, country);
 };
 
-export const validateIBAN = (IBANToValidate) => {
+export const validateIBAN = (IBANToValidate: string) => {
   return IBAN.validateIBAN(IBANToValidate, true);
 };

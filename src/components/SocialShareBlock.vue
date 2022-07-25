@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { defineProps, toRefs, ref } from "vue";
 import { copyText } from "vue3-clipboard";
 import countryCurrency from "../dataObjects/countryCurrency";
@@ -7,8 +7,8 @@ const props = defineProps(["formData", "selectedData"]);
 const { formData, selectedData } = toRefs(props);
 const copyLabel = ref("Copy to clipboard");
 
-const doCopy = (shareUrl) => {
-  copyText(shareUrl, undefined, (error) => {
+const doCopy = (shareUrl: string) => {
+  copyText(shareUrl, undefined, (error: string) => {
     if (!error) {
       copyLabel.value = "Copied!";
       setTimeout(() => (copyLabel.value = "Copy to clipboard"), 3000);
